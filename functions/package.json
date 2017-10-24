@@ -1,19 +1,19 @@
 {
   "name": "functions",
-  "description": "Cloud Functions for Firebase",
   "scripts": {
-    "build": "./node_modules/.bin/tsc"
+    "build": "./node_modules/.bin/tslint -p tslint.json && ./node_modules/.bin/tsc"
   },
-  "main": "src/index.js",
+  "main": "lib/index.js",
   "dependencies": {
-    "@types/lodash": "^4.14.77",
-    "firebase-admin": "~5.4.0",
-    "firebase-functions": "^0.7.0",
+    "@types/lodash": "^4.14.78",
+    "firebase-admin": "~5.4.2",
+    "firebase-functions": "^0.7.1",
     "lodash": "^4.17.4",
     "twitter": "^1.7.1"
   },
-  "private": true,
   "devDependencies": {
+    "tslint": "^5.8.0",
     "typescript": "^2.5.3"
-  }
+  },
+  "private": true
 }

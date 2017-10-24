@@ -54,12 +54,16 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
-# environment variables files
+# dot environment variables file
 .env
-.runtimeconfig.json
 
 # IDEs
 .idea
 
 # Misc
 .DS_Store
+
+# Firebase config specific
+.runtimeconfig.json
+.firebaserc
+functions/lib
