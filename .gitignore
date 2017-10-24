@@ -54,6 +54,12 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# environment variables files
 .env
+.runtimeconfig.json
 
+# IDEs
+.idea
+
+# Misc
+.DS_Store
