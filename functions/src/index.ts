@@ -1,4 +1,5 @@
 import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
 import * as Twitter from 'twitter';
 import * as _ from 'lodash';
 
@@ -6,6 +7,7 @@ import * as _ from 'lodash';
 // access_token_secret. Technically we should either fetch application credentials or use a unique credential per user,
 // but this doesn't really add value to the demo.
 const twitter = new Twitter(functions.config().twitter);
+admin.initializeApp(functions.config().firebase);
 
 async function getFriends(user: string): Promise<string[]> {
   // Note: More code is needed to support users following more than 5K people.
@@ -13,9 +15,9 @@ async function getFriends(user: string): Promise<string[]> {
   return response.ids;
 }
 
-async function getMyFollowerCount(user: string): Promise<number> {
+async function lookupUser(user: string): Promise<Twitter.UserLookupResult> {
   const responses = await twitter.get('users/lookup', {screen_name: user} );
-  return responses[0].followers_count;
+  return responses[0];
 }
 
 async function getFollowerCount(ids: string[]) {
@@ -28,39 +30,59 @@ async function getFollowerCount(ids: string[]) {
  * @internal */
 export let USER_LOOKUP_BATCH_SIZE = 100;
 
-export let rating = functions.https.onRequest(async (req, res) => {
+export const rating = functions.https.onRequest(async (req, res) => {
   try {
     const username = req.query.username;
 
     // 0. Get my follower count:
-    const followerCount = await getMyFollowerCount(username);
+    const me = await lookupUser(username);
 
     // 1. Get the list of people this user follows:
-    const friendIds = await getFriends(username);
+    const myFriendsIds = await getFriends(username);
 
     // 2. Break this into groups no larger than Twitter's maximum batch size:
-    const friendIdsBatches = _.chunk(friendIds, USER_LOOKUP_BATCH_SIZE);
+    const batches = _.chunk(myFriendsIds, USER_LOOKUP_BATCH_SIZE);
 
     // 3. Get the follower count for each batch in parallel.
-    const getFriendsFollowersInBackground = friendIdsBatches.map(batch => getFollowerCount(batch));
+    const getFriendsFame = batches.map(batch => getFollowerCount(batch));
 
     // 4. Wait for all batches to be returned.
-    const friendFollowersBatchResult = await Promise.all(getFriendsFollowersInBackground);
+    const friendsFameBatches = await Promise.all(getFriendsFame);
 
-    // 5. In steps 2-4 we have an array of arrays. Turn that back into a single array of counts.
-    const friendsFollowersCount = _.flatMap(friendFollowersBatchResult);
+    // 5. In steps 2-4 we have an array of arrays. Turn that back into a single array of counts. Sort for later stats.
+    const friendsFame = _.flatMap(friendsFameBatches).sort();
 
     // 6. Calculate fun/depressing stats:
-    const friendCount = friendIds.length;
-    const meanFriendsFollowers = _.mean(friendsFollowersCount);
-    const morePopularFriends = _.countBy(friendsFollowersCount, theirFollowers => theirFollowers > followerCount).true;
-    const morePopularFriendsPercent = morePopularFriends / friendCount;
+    const friendCount = myFriendsIds.length;
+    const fame = me.followers_count;
+    const friendFameAvg = _.mean(friendsFame);
+    const friendsFameP50 = friendsFame[(friendsFame.length / 2).toFixed()];
+    const friendsFameP90 = friendsFame[(friendsFame.length / 10).toFixed()];
+    const moreFamousFriendCount = _.countBy(friendsFame, theirFame => theirFame > fame).true;
+    const moreFamousFriendRatio = moreFamousFriendCount / friendCount;
 
-    const result = {username, friendCount, followerCount, meanFriendsFollowers, morePopularFriends, morePopularFriendsPercent};
-    res.json(result);
+    const stats = {username, fame, friendFameAvg, friendsFameP50, friendsFameP90, moreFamousFriendCount, moreFamousFriendRatio};
+    await admin.database().ref(`stats/${username}`).set(stats);
+    res.json(stats);
 
   } catch (err) {
     console.error('Failed to calculate friendship stats:', err);
     res.status(504).json(err);
   }
+});
+
+export const aggregate = functions.database.ref('stats/{username}').onCreate(async event => {
+  const moreFamousThanFriends = event.data.val().moreFamousFriendRatio > 0.5;
+
+  await admin.database().ref('aggregate').transaction(val => {
+    const res = val || {moreFamousThanPeers: 0, lessFamousThanPeers: 0, total: 0, ratioMoreFamousThanPeers: 0};
+    if (moreFamousThanFriends) {
+      res.lessFamousThanPeers += 1;
+    } else {
+      res.moreFamousThanPeers += 1;
+    }
+    res.total += 1;
+    res.ratioMoreFamousThanPeers = res.moreFamousThanPeers / res.total;
+    return res;
+  })
 });
