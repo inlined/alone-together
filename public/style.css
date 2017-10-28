@@ -1,6 +1,6 @@
 body {
   font-family: 'Source Sans Pro', sans-serif;
-  font-size: 55px;
+  font-size: 2.3em;
   font-weight: bold;
   color: #757575;
 
@@ -12,10 +12,8 @@ body {
 }
 
 .text-container {
-  width: 1400px;
-  height: 500px;
-  margin: auto;
-  padding-top: 10%;
+  margin-left: 15%;
+  margin-top: 10%;
 }
 
 .stat {
