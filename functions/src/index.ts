@@ -37,6 +37,7 @@ export const rating = functions.https.onRequest(async (req, res) => {
     // 0. Get my follower count:
     const me = await lookupUser(username);
 
+
     // 1. Get the list of people this user follows:
     const myFriendsIds = await getFriends(username);
 
@@ -62,9 +63,10 @@ export const rating = functions.https.onRequest(async (req, res) => {
     const moreFamousFriendRatio = moreFamousFriendCount / friendCount;
 
     const stats = {username, fame, friendFameAvg, friendsFameP50, friendsFameP90, moreFamousFriendCount, moreFamousFriendRatio};
-    await admin.database().ref(`stats/${username}`).set(stats);
-    res.json(stats);
+    console.log('Full stats: ', JSON.stringify(stats, null, 2));
 
+    await admin.database().ref(`stats/${username}`).set(stats);
+    res.json({username, moreFamousFriendRatio});
   } catch (err) {
     console.error('Failed to calculate friendship stats:', err);
     res.status(504).json(err);
