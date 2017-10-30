@@ -86,5 +86,7 @@ export const aggregate = functions.database.ref('stats/{username}').onCreate(asy
     res.total += 1;
     res.ratioMoreFamousThanPeers = res.moreFamousThanPeers / res.total;
     return res;
-  });
+  })
 });
+
+export * from './demo-helper';
