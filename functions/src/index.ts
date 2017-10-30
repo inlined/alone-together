@@ -78,6 +78,7 @@ export const aggregate = functions.database.ref('stats/{username}').onCreate(asy
 
   await admin.database().ref('aggregate').transaction(val => {
     const res = val || {moreFamousThanPeers: 0, lessFamousThanPeers: 0, total: 0, ratioMoreFamousThanPeers: 0};
+    console.log('Prior to update, stats are: ' + JSON.stringify(res, null, 2));
     if (moreFamousThanFriends) {
       res.lessFamousThanPeers += 1;
     } else {
@@ -85,6 +86,7 @@ export const aggregate = functions.database.ref('stats/{username}').onCreate(asy
     }
     res.total += 1;
     res.ratioMoreFamousThanPeers = res.moreFamousThanPeers / res.total;
+    console.log('Updating stats to: ' + JSON.stringify(res, null, 2));
     return res;
   })
 });
