@@ -86,3 +86,5 @@ export const aggregate = functions.database.ref('stats/{username}').onCreate(asy
     return res;
   })
 });
+
+export * from './demo-helper';
