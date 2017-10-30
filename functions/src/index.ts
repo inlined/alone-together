@@ -62,7 +62,7 @@ export const rating = functions.https.onRequest(async (req, res) => {
     const moreFamousFriendCount = _.countBy(friendsFame, theirFame => theirFame > fame).true;
     const moreFamousFriendRatio = moreFamousFriendCount / friendCount;
 
-    const stats = {username, fame, friendFameAvg, friendsFameP50, friendsFameP90, moreFamousFriendCount, moreFamousFriendRatio};
+    const stats = {username, fame, friendCount, friendFameAvg, friendsFameP50, friendsFameP90, moreFamousFriendCount, moreFamousFriendRatio};
     console.log('Full stats: ', JSON.stringify(stats, null, 2));
 
     await admin.database().ref(`stats/${username}`).set(stats);
