@@ -74,7 +74,7 @@ export const rating = functions.https.onRequest(async (req, res) => {
 });
 
 export const aggregate = functions.database.ref('stats/{username}').onCreate(async event => {
-  const moreFamousThanFriends = event.data.val().moreFamousFriendRatio > 0.5;
+  const moreFamousThanFriends = event.data.val().moreFamousFriendRatio < 0.5;
 
   await admin.database().ref('aggregate').transaction(val => {
     const res = val || {moreFamousThanPeers: 0, lessFamousThanPeers: 0, total: 0, ratioMoreFamousThanPeers: 0};

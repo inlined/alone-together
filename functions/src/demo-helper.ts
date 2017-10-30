@@ -11,7 +11,7 @@ export const resetAggregate = functions.database.ref('aggregate').onDelete(async
     const snapshot = await admin.database().ref('stats').once('value');
     snapshot.forEach(childSnapshot => {
         const val = childSnapshot.val();
-        const moreFamousThanFriends = val.moreFamousFriendRatio > 0.5;
+        const moreFamousThanFriends = val.moreFamousFriendRatio < 0.5;
         if (moreFamousThanFriends) {
             stat.moreFamousThanPeers += 1;
         } else {
