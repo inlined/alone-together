@@ -13,14 +13,18 @@
       "**/.*",
       "**/node_modules/**"
     ],
-    "redirects": [ {
-      "source" : "/source",
-      "destination" : "https://github.com/inlined/alone-together",
-      "type" : 302
-    } ],
-    "rewrites": [{
-      "source": "/rating",
-      "function": "rating"
-    }]
+    "redirects": [
+      {
+        "source": "/source",
+        "destination": "https://github.com/inlined/alone-together",
+        "type": 302
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/rating",
+        "function": "rating"
+      }
+    ]
   }
 }

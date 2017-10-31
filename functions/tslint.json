@@ -107,11 +107,6 @@
     // (Even better: check out utils like .map if transforming an array!)
     "prefer-for-of": {"severity": "warning"},
 
-    // Functions that return promises should be marked 'async' which ensures callers only need to worry about rejected
-    // promises rather than thrown errors as well. This is only listed in the "linter" section because some developers
-    // may find `return Promise.resolve();` for noop returns overly pedantic.
-    "promise-function-async": {"severity": "warning"},
-
     // Warns if function overloads could be unified into a single function with optional or rest parameters.
     "unified-signatures": {"severity": "warning"},
 
