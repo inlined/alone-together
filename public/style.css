@@ -12,8 +12,8 @@ body {
 }
 
 .text-container {
-  margin-left: 15%;
-  margin-top: 10%;
+  padding: 5%;
+  text-align: center;
 }
 
 .stat {
@@ -31,4 +31,22 @@ body {
 
 #percent-famous {
   color: #FF8A65;
+}
+
+.join-prompt {
+  text-decoration: none;
+  color: #039BE5;
+}
+
+.join-prompt:hover {
+  text-decoration: underline;
+}
+
+.error-prompt {
+  text-decoration: none;
+  color: #FF8A65;
+}
+
+.personal-stat {
+  color: #F57C00;
 }
