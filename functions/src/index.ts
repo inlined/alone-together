@@ -73,7 +73,8 @@ export const rating = functions.https.onRequest(async (req, res) => {
 
 export const aggregate = functions.database.ref('stats/{username}').onCreate(async event => {
   const moreFamousThanFriends = event.data.val().moreFamousFriendRatio < 0.5;
-
+  console.log('Updating aggregate stats to include another user:\n' + JSON.stringify(event.data.val()), null, 2);
+  console.log('More famous than friends? ' + moreFamousThanFriends);
   const txResult = await admin.database().ref('aggregate').transaction(val => {
     const res = val || {moreFamousThanPeers: 0, lessFamousThanPeers: 0, total: 0, ratioMoreFamousThanPeers: 0};
     if (moreFamousThanFriends) {
@@ -85,7 +86,6 @@ export const aggregate = functions.database.ref('stats/{username}').onCreate(asy
     res.ratioMoreFamousThanPeers = res.moreFamousThanPeers / res.total;
     return res;
   });
-
   console.log('Updated stats to: ' + JSON.stringify(txResult.snapshot.val(), null, 2));
 });
 
