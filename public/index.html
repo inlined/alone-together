@@ -6,32 +6,98 @@
     <title>Alone Together</title>
     <script defer src="/__/firebase/4.6.0/firebase-app.js"></script>
     <script defer src="/__/firebase/4.6.0/firebase-database.js"></script>
+    <script defer src="/__/firebase/4.6.0/firebase-auth.js"></script>
     <!-- initialize the SDK after all desired features are loaded -->
     <script defer src="/__/firebase/init.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class = "text-container">
-      <span class = "stat" id="less-famous"></span>&nbsp;&nbsp;people are less famous than their friends.
+    <div class="text-container">
+      <span class="stat" id="less-famous"></span>&nbsp;&nbsp;people are less famous than their friends.
       <p>
-      <span class = "stat" id="more-famous"></span>&nbsp;&nbsp;people are more famous than their friends.
+      <span class="stat" id="more-famous"></span>&nbsp;&nbsp;people are more famous than their friends.
       <p>
-      <span class = "stat" id="percent-famous"></span>&nbsp;&nbsp;of people are more famous than their friends.
+      <span class="stat" id="percent-famous"></span>&nbsp;&nbsp;of people are more famous than their friends.
+      <p>
+      <span id="join"></span>
+      </p>
     </div>
     <!-- end of body -->
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('dom loaded')
-        firebase.database().ref('/aggregate').on('value', snapshot => {
-          const result = snapshot.val();
-          console.log(result);
-          document.getElementById('more-famous').innerHTML = result.moreFamousThanPeers || 0;
-          document.getElementById('less-famous').innerHTML = result.lessFamousThanPeers || 0;
-          const percent = Math.round(result.ratioMoreFamousThanPeers * 100) || 0;
-          document.getElementById('percent-famous').innerHTML = percent + '%';
+        console.log('dom loaded');
+        firebase.database().ref('/aggregate').on('value', updateStats);
+
+        // Twitter possibilities:
+        // 1. They are not logged in
+        // 2. They were already logged in
+        // 3. They just logged in
+        firebase.auth().getRedirectResult().then(function(result) {
+          if (result.user === null) {
+            console.log('Redirect result is null');
+            promptTwitter();
+            return;
+          }
+
+          var secret = btoa(result.credential.accessToken) + '+' + btoa(result.credential.secret);
+          fetch('/rating?username=' + result.additionalUserInfo.username, {
+            headers: {
+              'Authentication': 'Basic ' + secret
+            }
+          }).then(showPersonalStats);
+        }).catch(function(err) {
+          console.log('Failed to get redirect result with error', err);
+          document.getElementById('join').innerHTML =
+          '<a href="#" class="error-prompt" onClick="authWithTwitter()">Error logging in, try again.</a>';
         });
+
+        firebase.auth().onAuthStateChanged(function(user) {
+          console.log("user state change:", user);
+          if (!user) {
+            promptTwitter();
+            return;
+          } else {
+            emptyPrompt();
+          }
+          // If the user is just now logging in we'll get that from the redirect result.
+        })
       });
+
+      function updateStats(snapshot) {
+        const result = snapshot.val();
+        console.log(result);
+        document.getElementById('more-famous').innerHTML = result.moreFamousThanPeers || 0;
+        document.getElementById('less-famous').innerHTML = result.lessFamousThanPeers || 0;
+        const percent = Math.round(result.ratioMoreFamousThanPeers * 100) || 0;
+        document.getElementById('percent-famous').innerHTML = percent + '%';
+      }
+
+      function promptTwitter() {
+        document.getElementById('join').innerHTML =
+          '<a href="#" class="join-prompt" onClick="authWithTwitter()">Add your stat</a>';
+      }
+
+      function emptyPrompt() {
+        document.getElementById('join').innerHTML = '';
+      }
+
+      function authWithTwitter() {
+        var provider = new firebase.auth.TwitterAuthProvider();
+        firebase.auth().signInWithRedirect(provider);
+        return false;
+      }
+
+      function showPersonalStats(response) {
+        response.json().then(function(result) {
+          // sample response: {username: "laurenzlong", moreFamousFriendRatio: 0.4062863795110594}
+          var moreFamousPercent = Math.round(result.moreFamousFriendRatio * 100);
+          document.getElementById('join').innerHTML =
+            '<span class ="personal-stat">' + result.username + ' ' + moreFamousPercent +
+            ' % of your friends are more famous than you.</span>';
+        }).catch(console.error)
+      }
+
     </script>
   </body>
 </html>

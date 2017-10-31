@@ -2,25 +2,22 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as Twitter from 'twitter';
 import * as _ from 'lodash';
+import * as helper from './demo-helper';
 
-// The twitter config value is expected to hold consumer_key, consumer_secret, access_token_key, and
-// access_token_secret. Technically we should either fetch application credentials or use a unique credential per user,
-// but this doesn't really add value to the demo.
-const twitter = new Twitter(functions.config().twitter);
 admin.initializeApp(functions.config().firebase);
 
-async function getFriends(user: string): Promise<string[]> {
+async function getFriends(twitter: Twitter, user: string): Promise<string[]> {
   // Note: More code is needed to support users following more than 5K people.
   const response = await twitter.get('friends/ids', {screen_name: user, stringify_ids: true});
   return response.ids;
 }
 
-async function lookupUser(user: string): Promise<Twitter.UserLookupResult> {
+async function lookupUser(twitter: Twitter, user: string): Promise<Twitter.UserLookupResult> {
   const responses = await twitter.get('users/lookup', {screen_name: user} );
   return responses[0];
 }
 
-async function getFollowerCount(ids: string[]) {
+async function getFollowerCount(twitter: Twitter, ids: string[]) {
   const responses = await twitter.get('users/lookup', {user_id: ids.join(',')});
   // Responses is an array of user profiles; we only care about the followers count
   return responses.map(response => response.followers_count);
@@ -33,19 +30,20 @@ export let USER_LOOKUP_BATCH_SIZE = 100;
 export const rating = functions.https.onRequest(async (req, res) => {
   try {
     const username = req.query.username;
+    const twitter = helper.authenticateTwitter(req);
 
     // 0. Get my follower count:
-    const me = await lookupUser(username);
+    const me = await lookupUser(twitter, username);
 
 
     // 1. Get the list of people this user follows:
-    const myFriendsIds = await getFriends(username);
+    const myFriendsIds = await getFriends(twitter, username);
 
     // 2. Break this into groups no larger than Twitter's maximum batch size:
     const batches = _.chunk(myFriendsIds, USER_LOOKUP_BATCH_SIZE);
 
     // 3. Get the follower count for each batch in parallel.
-    const getFriendsFame = batches.map(batch => getFollowerCount(batch));
+    const getFriendsFame = batches.map(batch => getFollowerCount(twitter, batch));
 
     // 4. Wait for all batches to be returned.
     const friendsFameBatches = await Promise.all(getFriendsFame);
@@ -80,9 +78,9 @@ export const aggregate = functions.database.ref('stats/{username}').onCreate(asy
     const res = val || {moreFamousThanPeers: 0, lessFamousThanPeers: 0, total: 0, ratioMoreFamousThanPeers: 0};
     console.log('Prior to update, stats are: ' + JSON.stringify(res, null, 2));
     if (moreFamousThanFriends) {
-      res.lessFamousThanPeers += 1;
-    } else {
       res.moreFamousThanPeers += 1;
+    } else {
+      res.lessFamousThanPeers += 1;
     }
     res.total += 1;
     res.ratioMoreFamousThanPeers = res.moreFamousThanPeers / res.total;
