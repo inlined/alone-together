@@ -3,7 +3,6 @@ import * as admin from 'firebase-admin';
 import * as Twitter from 'twitter';
 import * as _ from 'lodash';
 import * as helper from './demo-helper';
-export {helper};
 
 admin.initializeApp(functions.config().firebase);
 
@@ -79,9 +78,9 @@ export const aggregate = functions.database.ref('stats/{username}').onCreate(asy
     const res = val || {moreFamousThanPeers: 0, lessFamousThanPeers: 0, total: 0, ratioMoreFamousThanPeers: 0};
     console.log('Prior to update, stats are: ' + JSON.stringify(res, null, 2));
     if (moreFamousThanFriends) {
-      res.lessFamousThanPeers += 1;
-    } else {
       res.moreFamousThanPeers += 1;
+    } else {
+      res.lessFamousThanPeers += 1;
     }
     res.total += 1;
     res.ratioMoreFamousThanPeers = res.moreFamousThanPeers / res.total;
